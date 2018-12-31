@@ -7,3 +7,4 @@ teeworlds.exe
 bam.exe
 config.lua
 datasrc/*.pyc
+src/game/generated/*
