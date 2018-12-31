@@ -1,0 +1,3 @@
+add timeout stats
+and show current timeouted players with !timeouted
+and auto chat response fi some1 writes a name of a timeouted

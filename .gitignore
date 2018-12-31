@@ -1,0 +1,9 @@
+friends/*
+stats/*
+local.cfg
+objs/*
+teeworlds.exe
+.bam/
+bam.exe
+config.lua
+datasrc/*.pyc
