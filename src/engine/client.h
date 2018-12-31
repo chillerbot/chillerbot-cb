@@ -112,12 +112,14 @@ public:
 	inline float LocalTime() const { return m_LocalTime; }
 
 	// actions
-	virtual void Connect(const char *pAddress) = 0;
-	virtual void Disconnect() = 0;
+	virtual void Connect(const char *pAddress, bool ClearDC = true) = 0;
+	virtual void Disconnect(bool ClearDC = true) = 0;
 	virtual void Quit() = 0;
 
 	// networking
 	virtual void EnterGame() = 0;
+	virtual void SendSwitchTeam(int Team) = 0; //chillerbot-CB
+	virtual void SendKill() = 0; //chillerbot-CB
 
 	// input
 	virtual int *GetInput(int Tick) = 0;
@@ -179,7 +181,7 @@ public:
 	virtual void OnConnected() = 0;
 	virtual void OnMessage(int MsgID, CUnpacker *pUnpacker) = 0;
 
-	virtual int OnSnapInput(int *pData) = 0;
+	virtual int OnSnapInput(int *pData, int cDir) = 0;
 
 	virtual const char *GetItemName(int Type) = 0;
 	virtual const char *Version() = 0;

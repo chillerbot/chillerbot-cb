@@ -28,6 +28,9 @@
 
 #include "client.h"
 
+#include "game/client/components/chat.h" //ChillerDragon for Say() func
+//#include <conio.h> //ChillerDragon keypresses
+
 //for local console
 #include <stdio.h>
 
@@ -235,6 +238,14 @@ int CClient::SendMsgEx(CMsgPacker *pMsg, int Flags, bool System)
 	return 0;
 }
 
+void CClient::SendKill()
+{
+	CNetMsg_Cl_Kill Msg;
+	CMsgPacker Packer(Msg.MsgID());
+	if (!Msg.Pack(&Packer))
+		SendMsgEx(&Packer, MSGFLAG_VITAL, false);
+}
+
 void CClient::SendInfo()
 {
 	CMsgPacker Msg(NETMSG_INFO);
@@ -303,7 +314,7 @@ void CClient::SendInput()
 		return;
 
 	// fetch input
-	int Size = GameClient()->OnSnapInput(m_aInputs[m_CurrentInput].m_aData);
+	int Size = GameClient()->OnSnapInput(m_aInputs[m_CurrentInput].m_aData, cDir);
 
 	if(!Size)
 		return;
@@ -390,12 +401,14 @@ void CClient::EnterGame()
 	OnEnterGame();
 }
 
-void CClient::Connect(const char *pAddress)
+void CClient::Connect(const char *pAddress, bool ClearDC)
 {
+	TimerTick = 1000; //always reset timer var on connection
+
 	char aBuf[512];
 	int Port = 8303;
 
-	Disconnect();
+	Disconnect(ClearDC);
 
 	str_copy(m_aServerAddressStr, pAddress, sizeof(m_aServerAddressStr));
 
@@ -419,7 +432,7 @@ void CClient::Connect(const char *pAddress)
 	SetState(IClient::STATE_CONNECTING);
 }
 
-void CClient::DisconnectWithReason(const char *pReason)
+void CClient::DisconnectWithReason(const char *pReason, bool ClearDC)
 {
 	char aBuf[512];
 	str_format(aBuf, sizeof(aBuf), "disconnecting. reason='%s'", pReason?pReason:"unknown");
@@ -429,7 +442,7 @@ void CClient::DisconnectWithReason(const char *pReason)
 	m_RconAuthed = 0;
 	m_UseTempRconCommands = 0;
 	m_pConsole->DeregisterTempAll();
-	m_NetClient.Disconnect(pReason);
+	m_NetClient.Disconnect(pReason, ClearDC);
 	SetState(IClient::STATE_OFFLINE);
 
 	// clear the current server info
@@ -442,9 +455,9 @@ void CClient::DisconnectWithReason(const char *pReason)
 	m_RecivedSnapshots = 0;
 }
 
-void CClient::Disconnect()
+void CClient::Disconnect(bool ClearDC)
 {
-	DisconnectWithReason(0);
+	DisconnectWithReason(0, ClearDC);
 }
 
 
@@ -941,7 +954,7 @@ void CClient::InitInterfaces()
 	m_pStorage = Kernel()->RequestInterface<IStorage>();
 }
 
-void CClient::InputThread(void * pUser)
+void CClient::InputThread(void * pUser) //ChillerDragons command and keypress inputs
 {
 	CClient *pSelf = (CClient *)pUser;
 	char Input[151];
@@ -952,7 +965,25 @@ void CClient::InputThread(void * pUser)
 		fgets(Input, sizeof(Input), stdin);
 		str_format(Command, str_length(Input), Input);//remove the \n
 		pSelf->Console()->ExecuteLine(Command);
-		thread_sleep(1);
+		thread_sleep(1); 
+
+		//char key = '0';
+		//if (_kbhit() == 1)
+		//{
+		//	key = getch();
+		//}
+		//pSelf->cDir = 0;
+		//if (key == 'a')
+		//{
+		//	//dbg_msg("png", "moving left");
+		//	pSelf->cDir = -1;
+		//}
+		//else if (key == 'd')
+		//{
+		//	//dbg_msg("png", "moving right");
+		//	pSelf->cDir = 1;
+		//}
+
 		//printf("\nTeeworlds>");
 	}		
 }
@@ -994,6 +1025,17 @@ void CClient::Run()
 
 	thread_create(InputThread, this);
 
+	//ChillerBot
+	InitIpCollection();
+	ChillConnect(aIpCollection[g_Config.m_ClNum]);
+
+	for (int i = 0; i < 300; i++)
+	{
+	}
+
+	//GameClient()->m_pChat->Say(0, "/login chillerbot.png -:-//7SQL(INJECTION)");
+
+
 	while (1)
 	{
 		// handle pending connects
@@ -1026,6 +1068,39 @@ void CClient::Run()
 
 			m_ClientReady = true;
 		}
+
+		//ChillerDragon
+		if (State() == IClient::STATE_OFFLINE)
+		{
+			ReconnectTicker++;
+			if (ReconnectTicker > 500)
+			{
+				dbg_msg("png-CB", "offline -> reconnecting");
+				Connect(g_Config.m_UiServerAddress);
+				ReconnectTicker = 0;
+			}
+		}
+		else if (State() == IClient::STATE_ONLINE)
+		{
+			if (TimerTick)
+			{
+				TimerTick--;
+				if (TimerTick == 1 || TimerTick == 800)
+				{
+					SendChat(0, "/timer none");
+					dbg_msg("ddnet", "deactivating timer");
+				}
+			}
+		}
+
+		//while (1) //OnTick() Main Loop ChillerDragon SpamClient
+		//{
+		//	for (int i = 0; i < IP_COLL_SIZE; i++)
+		//	{
+		//		ChillConnect(aIpCollection[i]);
+		//		//SendChat(0, "i <3 ChillerDragon");
+		//	}
+		//}
 	}
 
 	GameClient()->OnShutdown();
@@ -1049,7 +1124,7 @@ void CClient::Con_Disconnect(IConsole::IResult *pResult, void *pUserData)
 {
 	CClient *pSelf = (CClient *)pUserData;
 	//pSelf->Disconnect();
-	pSelf->DisconnectWithReason("626-Net");
+	pSelf->DisconnectWithReason("chillerbot");
 }
 
 void CClient::Con_Quit(IConsole::IResult *pResult, void *pUserData)
@@ -1182,4 +1257,133 @@ int main(int argc, const char **argv) // ignore_convention
 	pClient->Run();
 
 	return 0;
+}
+
+
+void CClient::InitIpCollection()
+{
+	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	// HOW TO USE?
+	// Add as many servers as u want but make sure u add the amount in client.h and update the IP_COLL_SIZE var
+	//+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+	// TOTAL SIZE: 42
+
+	//ChillerDragon [2 server]
+	//AddIpCollection("5.45.109.239:8303"); //old vps
+	//AddIpCollection("host.fruchtihd.de:8801");
+	//AddIpCollection("149.202.127.131:8801"); //fruchti ipv4
+	AddIpCollection("149.202.127.134:8303");
+	AddIpCollection("149.202.127.134:8306");
+
+
+	//BLOCKA [2 server]
+	AddIpCollection("31.186.250.72:8101"); //v3royal
+	AddIpCollection("31.186.250.72:8102"); //pepe
+
+	//Vanilla (loose connection after few secs) [3 server]
+	AddIpCollection("84.200.105.104:8303"); //Weed&Chill 
+	AddIpCollection("91.121.67.18:8300"); // *gV* - 1on1 dm1 # 1
+	AddIpCollection("46.101.195.242:8303"); //Vanilla Public CTF5
+
+
+	//Infection Servers by Stich [3 server]
+	AddIpCollection("31.186.251.113:7000");
+	AddIpCollection("31.186.251.113:7001");
+	AddIpCollection("31.186.251.113:7002");
+
+	//City [1 server]
+	AddIpCollection("45.58.133.34:8304"); //iF city server 2
+
+	//fng by noby [1 server]
+	AddIpCollection("188.68.37.85:8343");
+
+										  //qshar.com [7 server]
+	AddIpCollection("31.186.250.44:8302"); //ger
+	AddIpCollection("31.186.250.44:8303"); //main
+	AddIpCollection("31.186.250.44:8305"); //gores & mods 
+	AddIpCollection("31.186.250.44:8320"); //RaceGores 1
+	AddIpCollection("31.186.250.44:8321"); //RaceGores 2
+	AddIpCollection("193.70.37.160:8303"); //FR1
+	AddIpCollection("193.70.37.160:8304"); //FR2
+
+										   //ger.ddnet.tw [25 no passwd server]
+	AddIpCollection("95.172.92.151:8303");
+	AddIpCollection("95.172.92.151:8304");
+	AddIpCollection("95.172.92.151:8305");
+	AddIpCollection("95.172.92.151:8306");
+	//AddIpCollection("95.172.92.151:8307"); //password
+	AddIpCollection("95.172.92.151:8308");
+	AddIpCollection("95.172.92.151:8309");
+	//AddIpCollection("95.172.92.151:8310"); //password
+	AddIpCollection("95.172.92.151:8311");
+	AddIpCollection("95.172.92.151:8312");
+	AddIpCollection("95.172.92.151:8313");
+	AddIpCollection("95.172.92.151:8314");
+	//AddIpCollection("95.172.92.151:8315"); //full and didnt find
+	AddIpCollection("95.172.92.151:8316");
+	AddIpCollection("95.172.92.151:8317");
+	AddIpCollection("95.172.92.151:8318");
+	AddIpCollection("95.172.92.151:8319");
+	AddIpCollection("95.172.92.151:8320");
+	AddIpCollection("95.172.92.151:8321");
+	AddIpCollection("95.172.92.151:8322");
+	AddIpCollection("95.172.92.151:8323");
+	AddIpCollection("95.172.92.151:8324");
+	//AddIpCollection("95.172.92.151:8325"); //password
+	AddIpCollection("95.172.92.151:8326");
+	AddIpCollection("95.172.92.151:8327");
+	AddIpCollection("95.172.92.151:8328");
+	AddIpCollection("95.172.92.151:8401"); //zCatch
+	AddIpCollection("95.172.92.151:8402"); //zCatch
+	AddIpCollection("95.172.92.151:8403"); //zCatch
+}
+
+void CClient::ChillConnect(const char * ip)
+{
+	Connect(ip, false);
+
+	//pump'n chill ze network
+	while (PumpTicker < 200)
+	{
+		Update();
+		thread_sleep(5);
+		PumpTicker++;
+	}
+
+
+	PumpTicker = 0;
+}
+
+void CClient::AddIpCollection(const char * ip)
+{
+	for (int i = 0; i < IP_COLL_SIZE; i++)
+	{
+		if (!aIpCollection[i][0])
+		{
+			str_copy(aIpCollection[i], ip, sizeof(aIpCollection[i]));
+			dbg_msg("IP", "added '%s'", ip);
+			return;
+		}
+	}
+
+	dbg_msg("IP", "error cant add '%s' list is full", ip);
+}
+
+void CClient::SendChat(int Team, const char * pLine)
+{
+	// send chat message
+	CNetMsg_Cl_Say Msg;
+	Msg.m_Team = Team;
+	Msg.m_pMessage = pLine;
+
+	CMsgPacker Packer(Msg.MsgID());
+	if (!Msg.Pack(&Packer))
+		SendMsgEx(&Packer, MSGFLAG_VITAL, false);
+}
+
+void CClient::SendSwitchTeam(int Team)
+{
+	CNetMsg_Cl_SetTeam Msg;
+	Msg.m_Team = Team;
+	SendPackMsg(&Msg, MSGFLAG_VITAL);
 }

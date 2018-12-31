@@ -39,8 +39,8 @@ void CJobPool::WorkerThread(void *pUser)
 			pJob->m_Result = pJob->m_pfnFunc(pJob->m_pFuncData);
 			pJob->m_Status = CJob::STATE_DONE;
 		}
-		else
-			thread_sleep(10);
+		//else
+		//	thread_sleep(10);
 	}
 
 }

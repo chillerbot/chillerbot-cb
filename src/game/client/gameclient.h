@@ -193,7 +193,7 @@ public:
 	virtual void OnStateChange(int NewState, int OldState);
 	virtual void OnMessage(int MsgId, CUnpacker *pUnpacker);
 	virtual void OnNewSnapshot();
-	virtual int OnSnapInput(int *pData);
+	virtual int OnSnapInput(int *pData, int cDir);
 	virtual void OnShutdown();
 	virtual void OnEnterGame();
 	virtual void OnGameOver();

@@ -27,10 +27,10 @@ int CNetClient::Close()
 }
 
 
-int CNetClient::Disconnect(const char *pReason)
+int CNetClient::Disconnect(const char *pReason, bool ClearDC)
 {
 	//dbg_msg("netclient", "disconnected. reason=\"%s\"", pReason);
-	m_Connection.Disconnect(pReason);
+	m_Connection.Disconnect(pReason, ClearDC);
 	return 0;
 }
 

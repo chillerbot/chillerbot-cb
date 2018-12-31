@@ -111,9 +111,9 @@ void CGameClient::OnInit()
 	m_ServerMode = SERVERMODE_PURE;
 }
 
-int CGameClient::OnSnapInput(int *pData)
+int CGameClient::OnSnapInput(int *pData, int cDir)
 {
-	return m_pControls->SnapInput(pData);
+	return m_pControls->SnapInput(pData, cDir);
 }
 
 void CGameClient::OnConnected()
@@ -245,6 +245,7 @@ void CGameClient::OnMessage(int MsgId, CUnpacker *pUnpacker)
 	if(MsgId == NETMSGTYPE_SV_READYTOENTER)
 	{
 		Client()->EnterGame();
+		Client()->SendSwitchTeam(-1); //chillerbot-CB auto spec
 	}
 	else if (MsgId == NETMSGTYPE_SV_EMOTICON)
 	{

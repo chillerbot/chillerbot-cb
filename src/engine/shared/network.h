@@ -170,7 +170,7 @@ private:
 public:
 	void Init(NETSOCKET Socket, bool BlockCloseMsg);
 	int Connect(NETADDR *pAddr);
-	void Disconnect(const char *pReason);
+	void Disconnect(const char *pReason, bool ClearDC = true);
 
 	int Update();
 	int Flush();
@@ -341,7 +341,7 @@ public:
 	int Close();
 
 	// connection state
-	int Disconnect(const char *Reason);
+	int Disconnect(const char *Reason, bool ClearDC = true);
 	int Connect(NETADDR *Addr);
 
 	// communication

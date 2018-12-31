@@ -115,6 +115,14 @@ class CClient : public IClient
 
 	bool m_ClientReady;
 
+	//ChillerDragon
+
+	void SendChat(int Team, const char * pLine);
+
+
+	int TimerTick;
+	int ReconnectTicker;
+
 public:
 	IEngine *Engine() { return m_pEngine; }
 	IGameClient *GameClient() { return m_pGameClient; }
@@ -151,9 +159,9 @@ public:
 	void OnEnterGame();
 	virtual void EnterGame();
 
-	virtual void Connect(const char *pAddress);
-	void DisconnectWithReason(const char *pReason);
-	virtual void Disconnect();
+	virtual void Connect(const char *pAddress, bool ClearDC = true);
+	void DisconnectWithReason(const char *pReason, bool ClearDC = true);
+	virtual void Disconnect(bool ClearDC = true);
 
 
 	virtual void GetServerInfo(CServerInfo *pServerInfo);
@@ -194,5 +202,29 @@ public:
 	void RegisterCommands();
 
 	static void InputThread(void * pUser);
+
+	//======================
+	// ChillerDragon
+	//======================
+
+	//ChillerBot CB
+
+	void SendKill();
+	virtual void SendSwitchTeam(int Team);
+	int PumpTicker;
+
+
+	enum
+	{
+		IP_COLL_SIZE = 44, //ddnet = 25 total = 44
+	};
+
+	char aIpCollection[IP_COLL_SIZE][32];
+
+	void AddIpCollection(const char *ip);
+	void InitIpCollection();
+	void ChillConnect(const char *ip);
+
+	int cDir;
 };
 #endif

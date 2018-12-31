@@ -174,22 +174,26 @@ int CNetConnection::Connect(NETADDR *pAddr)
 	return 0;
 }
 
-void CNetConnection::Disconnect(const char *pReason)
+void CNetConnection::Disconnect(const char *pReason, bool ClearDC)
 {
 	if(State() == NET_CONNSTATE_OFFLINE)
 		return;
 
-	if(m_RemoteClosed == 0)
+	if (ClearDC)
 	{
-		if(pReason)
-			SendControl(NET_CTRLMSG_CLOSE, pReason, str_length(pReason)+1);
-		else
-			SendControl(NET_CTRLMSG_CLOSE, 0, 0);
+		if (m_RemoteClosed == 0)
+		{
+			if (pReason)
+				SendControl(NET_CTRLMSG_CLOSE, pReason, str_length(pReason) + 1);
+			else
+				SendControl(NET_CTRLMSG_CLOSE, 0, 0);
 
-		m_ErrorString[0] = 0;
-		if(pReason)
-			str_copy(m_ErrorString, pReason, sizeof(m_ErrorString));
+			m_ErrorString[0] = 0;
+			if (pReason)
+				str_copy(m_ErrorString, pReason, sizeof(m_ErrorString));
+		}
 	}
+
 
 	Reset();
 }

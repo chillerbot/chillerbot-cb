@@ -201,7 +201,7 @@ void CConsole::Print(int Level, const char *pFrom, const char *pStr)
 		}
 	}
 
-//	printf("Teeworlds>");
+	//printf("Teeworlds>");
 }
 
 bool CConsole::LineIsValid(const char *pStr)

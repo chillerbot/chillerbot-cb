@@ -22,4 +22,9 @@ MACRO_CONFIG_INT(ConsoleOutputLevel, console_output_level, 0, 0, 2, "Adjusts the
 MACRO_CONFIG_INT(ClCpuThrottle, cl_cpu_throttle, 1, 1, 100, "")
 MACRO_CONFIG_STR(Bindaddr, bindaddr, 128, "",  "Address to bind the client to")
 MACRO_CONFIG_INT(Debug, debug, 0, 0, 1, "Debug mode")
+
+//chillerbot
+MACRO_CONFIG_STR(ClChatPath, cl_chat_path, 128, "stats/chat.txt", "file where chat data gets saved")
+MACRO_CONFIG_STR(ClVotePath, cl_vote_path, 128, "stats/vote.txt", "file where vote data gets saved")
+MACRO_CONFIG_INT(ClNum, cl_num, 0, 0, 10, "what server the bot connects to")
 #endif
